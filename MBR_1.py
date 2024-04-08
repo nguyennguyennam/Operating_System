@@ -1,4 +1,5 @@
 import os
+from test import *
 
 class DATE:
     def __init__(self, day, mon, year, h, m, s):
@@ -8,7 +9,11 @@ class DATE:
         self.h = h
         self.m = m
         self.s = s
-
+    def getDate (self):
+        return f"{self.day}:{self.mon}:{self.year}"
+    def getTime (self):
+        return f"{self.h}:{self.m}:{self.s}"
+    
 class save_data:
     def __init__(self, type = None, file_name = None, attri = None, time = None, size = None, start = None, hid = None, id = None, parent = None, data = None):
         self.name = file_name
@@ -25,7 +30,17 @@ class save_data:
         self.son = []
 
     def getDate (self):
-        return self.time
+        return self.time.getDate()
+    def getTime (self):
+        return self.time.getTime()
+    def getNTFS_Date (self):
+        Time_conversion =  convert_nanoseconds_to_time(self.time)
+        return f"{Time_conversion.day}:{Time_conversion.month}:{Time_conversion.year}"
+    def getNTFS_Time (self):
+        Time_conversion =  convert_nanoseconds_to_time(self.time)
+        return f"{Time_conversion.hour}:{Time_conversion.minute}:{Time_conversion.sec}"
+        
+    
 
     def setInfor(self, type, attri, time, size, start, hid, id, data = None,name = None):
         self.type = type # 0 là FOLDER, 1 là FILE
@@ -42,7 +57,7 @@ class save_data:
         self.data = data
     def setName(self, file_name):
         self.name = file_name + self.name
-        
+    
 class partition:
     def __init__(self, init_value, b):
         self.type = init_value # 0 là NTFS, 1 là FAT32

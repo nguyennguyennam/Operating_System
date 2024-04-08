@@ -34,33 +34,44 @@ def get_data_by_key(data_list, key):
         # Check if the key exists in the dictionary
         if key in item:
             # If the key exists, append the corresponding value to the list
-            matching_values.append(item[key])
+            matching_values.append(item)
     
     # Return the list of matching values
     return matching_values
 
 def show_disk_info_1(file_system, item):
     new_item = treeview1.selection()[0]
-    new_item1 = get_data_by_key(u, new_item)[0]
+    new_item1 = get_data_by_key(u, new_item)[0][new_item]
     item2 = calculate_file_size(new_item1)
+    if (get_data_by_key(u1, new_item)[0]["type"] == -1 ):
+        item1 = calculate_folder_size(new_item1)
+        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 folder system\n This is a folder\n Folder system size: {item1} bytes")
+        return
+    item3 = NTFS_Date(new_item1)
+    item4 = NTFS_Time (new_item1)
     if file_system == 'NTFS':
         if item2 != 0: #1 la file
-            messagebox.showinfo("NTFS Information", f"This volume is a NTFS file system\n This is a file\n File system size: {item2} bytes")
+            messagebox.showinfo("NTFS Information", f"This volume is a NTFS file system\n This is a file\n File system size: {item2} bytes\n Date created : {item3} \nTime Created: {item4}")
             return            
         item1 = calculate_folder_size(new_item1)
-        messagebox.showinfo("NTFS Information", f"This volume is a NTFS folder system\n This is a folder\n Folder system size: {item1} bytes")
+        messagebox.showinfo("NTFS Information", f"This volume is a NTFS folder system\n This is a folder\n Folder system size: {item1} bytes\n Date created : {item3} \nTime Created: {item4}")
 
 def show_disk_info_2(file_system, item):
     new_item = treeview2.selection()[0]
-    new_item1 = get_data_by_key(u1, new_item)[0]
+    new_item1 = get_data_by_key(u1, new_item)[0][new_item]
     item2 = calculate_file_size(new_item1)
+    if (get_data_by_key(u1, new_item)[0]["type"] == -1 ):
+        item1 = calculate_folder_size(new_item1)
+        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 folder system\n This is a folder\n Folder system size: {item1} bytes")
+        return
     item3 = FAT32_date(new_item1)
+    item4 = FAT32_time(new_item1)
     if file_system == 'FAT32':
         if item2 != 0: #1 la file
-            messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 file system\n This is a file\n File system size: {item2} bytes \n Date created: {item3}")
+            messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 file system\n This is a file\n File system size: {item2} bytes \n Date created : {item3} \nTime Created: {item4}")
             return            
         item1 = calculate_folder_size(new_item1)
-        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 folder system\n This is a folder\n Folder system size: {item1} bytes \n Date created: {item3}")
+        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 folder system\n This is a folder\n Folder system size: {item1} bytes \n Date created: {item3}\n Time created: {item4}")
 
 
 def show_context_menu_1(event, item, file_system):  
@@ -75,6 +86,14 @@ def show_context_menu_2(event, item, file_system):
 
 def FAT32_date(file_item):
     return file_item.getDate()
+def FAT32_time (file_item):
+    return file_item.getTime()
+
+def NTFS_Date (file_item): 
+    return file_item.getNTFS_Date()
+
+def NTFS_Time (file_item):
+    return file_item.getNTFS_Time()
 
 def calculate_file_size(file_item):
     return file_item.size
@@ -99,13 +118,13 @@ def insert_treeview1(parent, item, file_system):
                 insert_treeview1(folder_item, sub_item, file_system)
             # Gắn sự kiện chuột phải cho thư mục
             treeview1.bind("<Button-3>", lambda event, item=item, file_system=file_system: show_context_menu_1(event, item, file_system))
-            my_dict = {folder_item: item}
+            my_dict = {folder_item: item, "type" :0}
             u.append(my_dict)
         elif item.type == 1:  # Nếu là tệp tin
             small_item = treeview1.insert(parent, tk.END, text=item.name, image=file_icon)
             # Gắn sự kiện chuột phải cho tệp tin
             treeview1.bind("<Button-3>", lambda event, item=item, file_system=file_system: show_context_menu_1(event, item, file_system))
-            my_dict = {small_item: item}
+            my_dict = {small_item: item, "type": 1}
             u.append(my_dict)
 
 def insert_treeview2(parent, item, file_system):
@@ -116,13 +135,13 @@ def insert_treeview2(parent, item, file_system):
                 insert_treeview2(folder_item, sub_item, file_system)
             # Gắn sự kiện chuột phải cho thư mục
             treeview2.bind("<Button-3>", lambda event, item=item, file_system=file_system: show_context_menu_2(event, item, file_system))
-            my_dict1 = {folder_item: item}
+            my_dict1 = {folder_item: item, "type" :0 }
             u1.append(my_dict1)
         elif item.type == 1:  # Nếu là tệp tin
             small_item1 = treeview2.insert(parent, tk.END, text=item.name, image=file_icon)
             # Gắn sự kiện chuột phải cho tệp tin
             treeview2.bind("<Button-3>", lambda event, item=item, file_system=file_system: show_context_menu_2(event, item, file_system))
-            my_dict1 = {small_item1: item}
+            my_dict1 = {small_item1: item, "type": 1}
             u1.append(my_dict1)
 
 mbr_usb_path = read_mbr(usb_path)
@@ -130,7 +149,7 @@ for partition in mbr_usb_path:
     if partition.type == 0: #partition = NTFS
         read_NTFS(partition)
         NTFS_name = treeview1.insert("", tk.END, text=partition.name, tags=('custom_font',), image=folder_icon)
-        my_dict = {NTFS_name: partition}
+        my_dict = {NTFS_name: partition, "type" : -1}
         u.append(my_dict)
         for sub_item in partition.son:
             folder_item = insert_treeview1(NTFS_name, sub_item, 'NTFS')
@@ -138,7 +157,7 @@ for partition in mbr_usb_path:
     elif partition.type == 1:
         read_FAT32(partition) 
         FAT32_name = treeview2.insert("", tk.END, text=partition.name, tags= ('custom_font',), image=folder_icon)
-        my_dict1 = {FAT32_name: partition}
+        my_dict1 = {FAT32_name: partition, "type" : -1}
         u1.append(my_dict1)
         for sub_item in partition.son:
             folder_item = insert_treeview2(FAT32_name, sub_item, 'FAT32')

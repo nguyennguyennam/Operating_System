@@ -30,9 +30,3 @@ hour = result_time.hour
 minute = result_time.minute
 second = result_time.second
 
-print("Ngày:", day)
-print("Tháng:", month)
-print("Năm:", year)
-print("Giờ:", hour)
-print("Phút:", minute)
-print("Giây:", second)
