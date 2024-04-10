@@ -1,6 +1,19 @@
 from MBR import *
 import datetime
 
+def convert_nanoseconds_to_time(nanoseconds):
+    # Tính số giây, phút, giờ, vv từ số nano giây
+    total_seconds = nanoseconds / 1e9  # Chuyển đổi nano giây thành giây
+    total_minutes, seconds = divmod(total_seconds, 60)
+    hours, minutes = divmod(total_minutes, 60)
+    days, hours = divmod(hours, 24)
+
+    # Tạo một đối tượng datetime từ số giây tính được
+    start_date = datetime.datetime(1601, 1, 1)
+    delta = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+    result_date = start_date + delta
+
+    return result_date
 
 def complement(x):
     temp = x ^ 0b11111111
@@ -12,14 +25,18 @@ def add(parti, t):
         return
     for i in parti.son:
         add(i, t)
-def read_MFT(byte_MFT, parti, byte_entry, sec_per_clus, byte_per_sec):
+def read_MFT(byte_MFT, parti, byte_entry, sec_per_clus, byte_per_sec, byte_before_parti):
     with open(usb_path, 'rb') as f:
         f = seek(f, byte_MFT)
-        #while (True):
-        #if(True):
+
         for i in range(0,100,1):
             type = -1
             entry = f.read(byte_entry)
+            data = ""
+            f_size = 0
+            start = 0
+            id = 0
+            hid = 1
             if (entry[0:4] != b'FILE'):
                 continue
             if (entry[22] == 0x00 or entry[22] == 0x02):
@@ -36,7 +53,9 @@ def read_MFT(byte_MFT, parti, byte_entry, sec_per_clus, byte_per_sec):
                 attri_type = attri_type // 16
                 if (attri_type == 1):
                     start_attri_data = int.from_bytes(attri[20:22], byteorder='little')
-                    nano_sec = int.from_bytes(attri[start_attri_data:start_attri_data + 8], byteorder='little') #TIME
+                    nano_sec = int.from_bytes(attri[start_attri_data:start_attri_data + 8], byteorder='little') *100  #TIME
+                    save_nano_sec = convert_nanoseconds_to_time(nano_sec) 
+                    save_date = DATE(save_nano_sec.day, save_nano_sec.month, save_nano_sec.year, save_nano_sec.hour, save_nano_sec.minute, save_nano_sec.second)
                 if (attri_type == 3):
                     start_attri_data = int.from_bytes(attri[20:22], byteorder='little')
                     id_parent = int.from_bytes(attri[start_attri_data:start_attri_data + 6], byteorder='little')    # ID PARENT
@@ -69,9 +88,37 @@ def read_MFT(byte_MFT, parti, byte_entry, sec_per_clus, byte_per_sec):
 
                     parti.setName(name)
                 if (attri_type == 8):
-                    f_size = int.from_bytes(attri[48:56], byteorder='little')  # SIZE
+                    if (attr[2] != '1'):
+                        if int.from_bytes(attri[8:9], byteorder='little') == 0: # non-resident = 0
+                            start_attri_data = int.from_bytes(attri[20:22], byteorder='little')
+                            f_size = int.from_bytes(attri[16:20], byteorder='little')  # SIZE
+                            print("***", f_size, "----", file_name)
+                            if hid == 0:
+                                #data = attri[start_attri_data:start_attri_data+ f_size].decode('utf-8')
+                                try:
+                                    data = attri[start_attri_data:start_attri_data+ f_size].decode('utf-8', errors='strict')
+                                    print("***")
+                                    print(data)
+                                except UnicodeDecodeError as e:
+                                    data = None
+
+                        else:
+                            start_attri_data = int.from_bytes(attri[20:22], byteorder='little')
+                            f_size = int.from_bytes(attri[48:56], byteorder='little')  # SIZE
+                            start = int.from_bytes(attri[74:77], byteorder='little')
+                            print(file_name,"---", start * sec_per_clus * byte_per_sec + byte_before_parti)
+                            with open(usb_path, 'rb') as file:
+                                file = seek(file, start * sec_per_clus * byte_per_sec + byte_before_parti)
+                                temp = file.read(3)
+                                try:
+                                    data = file.read(f_size).decode('utf-8')
+                                except UnicodeDecodeError as e:
+                                    print(file_name)
+                                    print(e)
+                                    data = None
+                            #     print(data)
                 start_attri = start_attri + size
-            temp = save_data(type, file_name, attri, None, f_size, None, hid, id, id_parent)
+            temp = save_data(type, file_name, attri, save_date, f_size, None, hid, id, id_parent, data)
             add(parti, temp)
             
 def read_NTFS(parti):
@@ -85,18 +132,7 @@ def read_NTFS(parti):
         byte_entry = 2 ** complement(temp_byte_entry)
         byte_MFT = parti.byte + cluster_MFT * sector_per_cluster * byte_per_sector
         
-        read_MFT(byte_MFT, parti, byte_entry, sector_per_cluster, byte_per_sector)
-read_NTFS(usb[0])
-print(usb[0].name)
-print("-----------------------------------")
-for i in usb[0].son:
-    if (i.hidden == 0):
-        print(i.name)
-        if (i.type == 0):
-            for j in i.son:
-                if (j.hidden == 0):
-                    print(" 1   ",j.name)
-                    if (j.type == 0):
-                        for k in j.son:
-                            if (k.hidden == 0):
-                                print("     2       ",k.name)
+        read_MFT(byte_MFT, parti, byte_entry, sector_per_cluster, byte_per_sector, parti.byte)
+       
+
+

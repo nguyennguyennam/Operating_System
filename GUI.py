@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from NTFS import *
-from FAT32_test import *
-from MBR_1 import *
+from FAT32 import *
+from MBR import *
 #from test import *
 
 
@@ -43,18 +43,18 @@ def show_disk_info_1(file_system, item):
     new_item = treeview1.selection()[0]
     new_item1 = get_data_by_key(u, new_item)[0][new_item]
     item2 = calculate_file_size(new_item1)
-    if (get_data_by_key(u1, new_item)[0]["type"] == -1 ):
+    if (get_data_by_key(u, new_item)[0]["type"] == -1 ):
         item1 = calculate_folder_size(new_item1)
-        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 folder system\n This is a folder\n Folder system size: {item1} bytes")
+        messagebox.showinfo("NTFS Information", f"This volume is a NTFS32 folder system\n This is a folder\n Folder system size: {item1} bytes")
         return
-    item3 = NTFS_Date(new_item1)
-    item4 = NTFS_Time (new_item1)
+    item3 = FAT32_date(new_item1)
+    item4 = FAT32_time(new_item1)
     if file_system == 'NTFS':
         if item2 != 0: #1 la file
-            messagebox.showinfo("NTFS Information", f"This volume is a NTFS file system\n This is a file\n File system size: {item2} bytes\n Date created : {item3} \nTime Created: {item4}")
+            messagebox.showinfo("NTFS Information", f"This volume is a NTFS system\n This is a file\n File system size: {item2} bytes\n Date created : {item3} \nTime Created: {item4}")
             return            
         item1 = calculate_folder_size(new_item1)
-        messagebox.showinfo("NTFS Information", f"This volume is a NTFS folder system\n This is a folder\n Folder system size: {item1} bytes\n Date created : {item3} \nTime Created: {item4}")
+        messagebox.showinfo("NTFS Information", f"This volume is a NTFS system\n This is a folder\n Folder system size: {item1} bytes\n Date created : {item3} \nTime Created: {item4}")
 
 def show_disk_info_2(file_system, item):
     new_item = treeview2.selection()[0]
@@ -62,26 +62,51 @@ def show_disk_info_2(file_system, item):
     item2 = calculate_file_size(new_item1)
     if (get_data_by_key(u1, new_item)[0]["type"] == -1 ):
         item1 = calculate_folder_size(new_item1)
-        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 folder system\n This is a folder\n Folder system size: {item1} bytes")
+        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32  system\n This is a folder\n Folder system size: {item1} bytes")
         return
     item3 = FAT32_date(new_item1)
     item4 = FAT32_time(new_item1)
     if file_system == 'FAT32':
         if item2 != 0: #1 la file
-            messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 file system\n This is a file\n File system size: {item2} bytes \n Date created : {item3} \nTime Created: {item4}")
+            messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 system\n This is a file\n File system size: {item2} bytes \n Date created : {item3} \nTime Created: {item4}")
             return            
         item1 = calculate_folder_size(new_item1)
-        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32 folder system\n This is a folder\n Folder system size: {item1} bytes \n Date created: {item3}\n Time created: {item4}")
+        messagebox.showinfo("FAT32 Information", f"This volume is a FAT32  system\n This is a folder\n Folder system size: {item1} bytes \n Date created: {item3}\n Time created: {item4}")
 
+def read_FAT32_data(file_system, item):
+    new_item = treeview2.selection()[0]
+    new_item1 = get_data_by_key(u1, new_item)[0][new_item]
+    item2 = fileData(new_item1)
+    window = tk.Toplevel()
+    # Tạo widget Text để hiển thị đoạn văn bản
+    text_widget = tk.Text(window)
+    text_widget.pack(fill="both", expand=True)
 
+    # Thêm đoạn văn bản vào widget Text
+    text_widget.insert("1.0", item2)
+
+def read_NTFS_data(file_system, item):
+    new_item = treeview1.selection()[0]
+    new_item1 = get_data_by_key(u, new_item)[0][new_item]
+    item2 = fileData(new_item1)
+    window = tk.Toplevel()
+    # Tạo widget Text để hiển thị đoạn văn bản
+    text_widget = tk.Text(window)
+    text_widget.pack(fill="both", expand=True)
+
+    # Thêm đoạn văn bản vào widget Text
+    text_widget.insert("1.0", item2)
+    
 def show_context_menu_1(event, item, file_system):  
-    context_menu = tk.Menu(root, tearoff=0)
-    context_menu.add_command(label="Show Disk Information", command=lambda: show_disk_info_1(file_system, item))
-    context_menu.post(event.x_root, event.y_root)
+    context_menu1 = tk.Menu(root, tearoff=0)
+    context_menu1.add_command(label="Show Disk Information", command=lambda: show_disk_info_1(file_system, item))
+    context_menu1.add_command(label="Display the inner content", command=lambda: read_NTFS_data(file_system, item))
+    context_menu1.post(event.x_root, event.y_root)
 
 def show_context_menu_2(event, item, file_system):  
     context_menu = tk.Menu(root, tearoff=0)
     context_menu.add_command(label="Show Disk Information", command=lambda: show_disk_info_2(file_system, item))
+    context_menu.add_command(label="Display the inner content", command=lambda: read_FAT32_data(file_system, item))
     context_menu.post(event.x_root, event.y_root)
 
 def FAT32_date(file_item):
@@ -90,10 +115,14 @@ def FAT32_time (file_item):
     return file_item.getTime()
 
 def NTFS_Date (file_item): 
-    return file_item.getNTFS_Date()
+    return file_item.getDate()
 
 def NTFS_Time (file_item):
-    return file_item.getNTFS_Time()
+    return file_item.getTime()
+
+def fileData (file_item):
+    return file_item.getData()
+
 
 def calculate_file_size(file_item):
     return file_item.size
@@ -163,6 +192,9 @@ for partition in mbr_usb_path:
             folder_item = insert_treeview2(FAT32_name, sub_item, 'FAT32')
             treeview2.bind("<Button-3>", lambda event, sub_item=sub_item, file_system='FAT32': show_context_menu_2(event, sub_item, 'FAT32'))
 
+
+print(treeview1.get_children)
+print(treeview2.get_children)
 treeview1.pack(expand=True, fill=tk.BOTH)
 treeview2.pack(expand=True, fill=tk.BOTH)
 set_window_to_fullscreen(root)

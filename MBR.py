@@ -1,15 +1,22 @@
 import os
+from test import *
 
 class DATE:
-    def __init__(self, day, mon, year, h, m, s):
+    def __init__(self, day = None, mon = None, year = None, h = None, m = None, s = None):
         self.day = day
         self.mon = mon
         self.year = year
         self.h = h
         self.m = m
         self.s = s
+        
+    def getDate (self):
+        return f"{self.day}:{self.mon}:{self.year}"
+    def getTime (self):
+        return f"{self.h}:{self.m}:{self.s}"
+    
 class save_data:
-    def __init__(self, type = None, file_name = None, attri = None, time = None, size = None, start = None, hid = None, id = None, parent = None):
+    def __init__(self, type = None, file_name = None, attri = None, time = None, size = None, start = None, hid = None, id = None, parent = None, data = None):
         self.name = file_name
         self.type = type # 0 là FOLDER, 1 là FILE
         self.attri = attri
@@ -20,9 +27,18 @@ class save_data:
         self.hidden = hid
         self.id = id
         self.parent = parent
+        self.data = data
         self.son = []
 
-    def setInfor(self, type, attri, time, size, start, hid, id, name = None):
+    def getDate (self):
+        return self.time.getDate()
+    def getTime (self):
+        return self.time.getTime()
+    def getData (self):
+        return self.data
+         
+
+    def setInfor(self, type, attri, time, size, start, hid, id, data = None,name = None):
         self.type = type # 0 là FOLDER, 1 là FILE
         self.attri = attri
         self.time = time
@@ -30,12 +46,14 @@ class save_data:
         self.start = start #CLUSTER
         self.hidden = hid
         self.id = id
+        self.data = data
         
         self.son = []
-    
+    def setData(self, data):
+        self.data = data
     def setName(self, file_name):
         self.name = file_name + self.name
-        
+    
 class partition:
     def __init__(self, init_value, b):
         self.type = init_value # 0 là NTFS, 1 là FAT32
@@ -82,6 +100,7 @@ def read_mbr(usb_path):
     return u
 
 usb = read_mbr(usb_path)
+
 def write_partition(usb):
     for i in range(len(usb)):
         print("Partition", i + 1,":", usb[i].type,"---", usb[i].byte)
